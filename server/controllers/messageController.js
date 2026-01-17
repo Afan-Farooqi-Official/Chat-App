@@ -1,0 +1,107 @@
+import UserModel from "../models/UserModel.js";
+import MessageModel from "../models/MessageModel.js";
+import cloudinary from '../lib/cloudinary.js'
+import {io, userSocketMap} from '../server.js'
+
+// Get all users except the current user
+export const getUsersForSidebar = async (req, res) => {
+    try {
+        
+        const userId = req.user._id;
+        const filteredUsers = await UserModel.find({_id: { $ne:userId }}).select("-password");
+
+        // Count unread messages for each user
+        const unseenMessages = []
+        const promises = filteredUsers.map(async (user) => {
+            const messages = await MessageModel.find({senderId: user._id, receiverId: userId, isSeen: false});
+            if (messages.length > 0) {
+                unseenMessages[user._id] = messages.length;
+            }
+        })
+
+        await Promise.all(promises);
+        res.json({success: true, users: filteredUsers, unseenMessages})
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+// Get all messages for selected chat user
+export const getMessages = async (req, res) => {
+    try {
+        
+        const {id: selectedUserId} = req.params;
+        const myId = req.user._id;
+
+        const messages = await MessageModel.find({
+            $or: [
+                { sender: myId, recipient: selectedUserId },
+                { sender: selectedUserId, recipient: myId },
+            ]
+        })
+        await MessageModel.updateMany(
+            {sender: selectedUserId, recipient: myId},
+            {seen: true}
+        );
+
+        res.json({success: true, messages});
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+// Mark messages as seen
+export const markMessagesAsSeen = async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        await MessageModel.findByIdAndUpdate(id, {seen: true});
+
+        res.json({success: true});
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal server error" })
+    }
+}
+
+// Send a new message to selected user
+export const sendMessage = async (req, res) => {
+    try {
+
+        const {text, image} = req.body;
+        const receiverId = req.params.id;
+        const senderId = req.user._id;
+
+        let imageUrl;
+        if (image) {
+            const uploadResponse = await cloudinary.uploader.upload(image)
+            imageUrl = uploadResponse.secure_url
+        }
+
+        const newMessage = await MessageModel.create({
+            senderId,
+            receiverId,
+            text,
+            image: imageUrl
+        })
+
+        await newMessage.save()
+
+        // Emit the new message to the receiver's socket
+        const receiverSocketId = userSocketMap[receiverId]
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('newMessage', newMessage)
+        }
+
+        res.json({success:true, newMessage})
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal server error" })
+    }
+}
