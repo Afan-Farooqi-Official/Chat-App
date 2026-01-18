@@ -1,4 +1,4 @@
-import UserModel from "../models/UserModel.js";
+import UserModel from "../models/userModel.js";
 import MessageModel from "../models/MessageModel.js";
 import cloudinary from '../lib/cloudinary.js'
 import {io, userSocketMap} from '../server.js'
@@ -73,19 +73,20 @@ export const markMessagesAsSeen = async (req, res) => {
 export const sendMessage = async (req, res) => {
     try {
 
-        const {text, image} = req.body;
+        const {text} = req.body;
         const receiverId = req.params.id;
         const senderId = req.user._id;
 
         let imageUrl;
-        if (image) {
-            const uploadResponse = await cloudinary.uploader.upload(image)
+
+        if (req.file) {
+            const uploadResponse = await cloudinary.uploader.upload(req.file.path)
             imageUrl = uploadResponse.secure_url
         }
 
         const newMessage = await MessageModel.create({
-            senderId,
-            receiverId,
+            sender: senderId,
+            recipient: receiverId,
             text,
             image: imageUrl
         })

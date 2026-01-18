@@ -1,7 +1,7 @@
 import UserModel from '../models/userModel.js'
 import bcrypt from 'bcryptjs'
 import {generateToken} from '../lib/utils.js'
-import cloudinary from '../lib/cloudinary.js'
+import {v2 as cloudinary} from 'cloudinary'
 
 // Signup new user
 export const signup = async (req, res) => {
@@ -19,12 +19,12 @@ export const signup = async (req, res) => {
         }
 
         const salt = await bcrypt.genSalt(10)
-        const hashPassword = await bcrypt.hash(password, salt)
+        const passwordHash = await bcrypt.hash(password, salt)
 
-        const newUser = new UserModel.create({
+        const newUser = new UserModel({
             fullName,
             email,
-            hashPassword,
+            passwordHash,
             bio
         })
 
@@ -42,6 +42,7 @@ export const signup = async (req, res) => {
 // Login existing user
 export const login = async (req, res) => {
     const {email, password} = req.body
+    
     try {
 
         const user = await UserModel.findOne({email})
@@ -49,7 +50,7 @@ export const login = async (req, res) => {
             return res.json({success: false, message: 'User not found'})
         }
 
-        const isMatch = await bcrypt.compare(password, user.hashPassword)
+        const isMatch = await bcrypt.compare(password, user.passwordHash)
         if (!isMatch) {
             return res.json({success: false, message: 'Invalid credentials'})
         }
@@ -71,16 +72,16 @@ export const checkAuth = async (req, res) => {
 // update user profile
 export const updateProfile = async (req, res) => {
     try {
-        const {profilePic, bio, fullName} = req.body
+        const { bio, fullName } = req.body
         
         const userId = req.user._id
         
         let updatedUser;
 
-        if (!profilePic) {
-            await UserModel.findByIdAndUpdate(userId, {bio, fullName}, {new: true})
+        if (!req.file) {
+            updatedUser = await UserModel.findByIdAndUpdate(userId, {bio, fullName}, {new: true})
         } else {
-            const upload = await cloudinary.uploader.upload(profilePic)
+            const upload = await cloudinary.uploader.upload(req.file.path)
 
             updatedUser = await UserModel.findByIdAndUpdate(userId, {
                 profilePic: upload.secure_url,
@@ -89,7 +90,6 @@ export const updateProfile = async (req, res) => {
             }, {new: true} )
         }
 
-        await updatedUser.save()
         res.json({success: true, user: updatedUser, message: 'Profile updated successfully'})
 
     } catch (error) {

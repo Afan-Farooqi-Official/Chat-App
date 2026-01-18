@@ -6,13 +6,14 @@ const authUser = async (req, res, next) => {
 
         const token = req.headers.token;
         if (!token) {
-            return res.json({success: false, message: 'Not Authorized, Login Again'})
+            return res.status(401).json({success: false, message: 'No token provided'})
         }
 
         const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+        
         const user = await UserModel.findById(token_decode.userId).select('-password');
         if (!user) {
-            return res.json({success: false, message: 'Not Authorized, Login Again'})
+            return res.status(401).json({success: false, message: 'Not Authorized, Login Again'})
         }
 
         req.user = user;
@@ -21,7 +22,16 @@ const authUser = async (req, res, next) => {
         
     } catch (error) {
         console.log(error);
-        res.json({success: false, message: error.message})
+
+        // Handle JWT-specific errors
+        if (error.name === "JsonWebTokenError") { 
+            return res.status(401).json({ success: false, message: "Invalid token" });
+        } 
+        if (error.name === "TokenExpiredError") { 
+            return res.status(401).json({ success: false, message: "Token expired" }); 
+        }
+
+        res.status(500).json({ error: "Internal server error" });
     }
 }
 

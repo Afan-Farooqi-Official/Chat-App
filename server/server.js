@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
     res.send('Server is up and running');
 });
 app.use('/api/auth', userRouter);
-app.use('api/messages', messageRouter);
+app.use('/api/messages', messageRouter);
 
 // start the express server
 app.listen(PORT, () => console.log(`Server started on PORT: ${PORT}`));
