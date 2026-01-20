@@ -1,16 +1,32 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import {useNavigate} from 'react-router-dom'
 import assets from '../assets/assets'
+import {AuthContext} from '../context/AuthContext'
 
 const Profile = () => {
 
+    const {authUser, updateProfile} = useContext(AuthContext)
+
   const [selectedImg, setSelectedImg] = useState(null)
   const navigate = useNavigate()
-  const [name, setName] = useState("Michal John")
-  const [bio, setBio] = useState("Hi There, I am Using ChatOne")
+  const [name, setName] = useState(authUser.fullName || '')
+  const [bio, setBio] = useState(authUser.bio || '')
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if(!selectedImg){
+      await updateProfile({fullName:name, bio:bio})
+      navigate('/')
+      return
+    }
+    
+    const formData = new FormData();
+    formData.append('fullName', name);
+    formData.append('bio', bio);
+    formData.append('profilePic', selectedImg);
+
+    await updateProfile(formData)
     navigate('/')
   }
 
@@ -47,7 +63,7 @@ const Profile = () => {
           </button>
         </form>
 
-        <img className='max-w-44 aspect-square rounded-2xl mx-10 max-sm:mt-10' src={assets.logo_icon} alt="" />
+        <img className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10 ${selectedImg && 'rounded-full'}`} src={authUser?.profilePic || assets.logo_icon} alt="" />
 
       </div>
     </div>
