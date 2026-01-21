@@ -43,7 +43,7 @@ export const ChatProvider = ({children}) => {
     // function to send message to a user
     const sendMessage = async (messageData, isFormData = false)=>{
         try {
-
+            
             const config = isFormData ?
             {headers: {
                 'Content-Type': 'multipart/form-data'
@@ -61,19 +61,22 @@ export const ChatProvider = ({children}) => {
     }
 
     // function to subscribe to messages for selected user
-    const subscribeToMessages = (userId)=>{
+    const subscribeToMessages = ()=>{
         if (!socket) {
             return
         }
 
+        // Prevent duplicate listeners 
+        socket.off("newMessage");
+
         socket.on("newMessage", (newMessage)=>{
-            if (selectedUser && newMessage.senderId === selectedUser._id) {
-                newMessage.seen = true
-                setMessages((prevMessages) => [...prevMessages, newMessage])
+            if (selectedUser && newMessage.sender === selectedUser._id) {
+                const updatedMessage = {...newMessage, seen: true}
+                setMessages((prevMessages) => [...prevMessages, updatedMessage])
                 axios.put(`/api/messages/mark/${newMessage._id}`)
             } else {
                 setUnseenMessages((prevUnseenMessages)=>({
-                    ...prevUnseenMessages, [newMessage.senderId] : prevUnseenMessages[newMessage.senderId] ? prevUnseenMessages[newMessage.senderId] + 1 : 1
+                    ...prevUnseenMessages, [newMessage.sender] : prevUnseenMessages[newMessage.sender] ? prevUnseenMessages[newMessage.sender] + 1 : 1
                 }))
             }
         })

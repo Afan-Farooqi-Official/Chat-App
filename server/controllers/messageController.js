@@ -1,6 +1,6 @@
 import UserModel from "../models/userModel.js";
 import MessageModel from "../models/MessageModel.js";
-import cloudinary from '../lib/cloudinary.js'
+import {v2 as cloudinary} from 'cloudinary'
 import {io, userSocketMap} from '../server.js'
 
 // Get all users except the current user
@@ -76,6 +76,10 @@ export const sendMessage = async (req, res) => {
         const {text} = req.body;
         const receiverId = req.params.id;
         const senderId = req.user._id;
+
+        if (!text && !req.file) {
+            return res.status(400).json({ success: false, message: "Message must have text or image" });
+        }
 
         let imageUrl;
 
