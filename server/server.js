@@ -24,7 +24,6 @@ export const userSocketMap = {};    // {userId: socketId}
 // Socket.io connection handler
 io.on("connection", (socket)=> {
     const userId = socket.handshake.query.userId
-    console.log("User Connected: ", userId);
     
     if (userId) {
         userSocketMap[userId] = socket.id
@@ -34,7 +33,6 @@ io.on("connection", (socket)=> {
     io.emit("getOnlineUsers", Object.keys(userSocketMap))
 
     socket.on("disconnect", () => {
-        console.log("User Disconnected", userId);
         delete userSocketMap[userId]
         io.emit("getOnlineUsers", Object.keys(userSocketMap))
     })
@@ -55,4 +53,4 @@ app.use('/api/auth', userRouter);
 app.use('/api/messages', messageRouter);
 
 // start the express server
-app.listen(PORT, () => console.log(`Server started on PORT: ${PORT}`));
+server.listen(PORT, () => console.log(`Server started on PORT: ${PORT}`));

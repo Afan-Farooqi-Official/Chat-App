@@ -12,7 +12,7 @@ export const AuthProvider = ({children})=>{
 
     const [token, setToken] = useState(localStorage.getItem("token"))
     const [authUser, setAuthUser] = useState(null)
-    const [onlineUsers, setOnlineUsers] = useState(null)
+    const [onlineUsers, setOnlineUsers] = useState([])
     const [socket, setSocket] = useState(null)
 
     // check if user is authenticated and if so, set the user data and connect the socket
@@ -97,20 +97,19 @@ export const AuthProvider = ({children})=>{
         }
     }
 
-    // connect socket function to handle socket connection and online users updates
+    // Connect user to socket server and track online users
     const connectSocket = (userData) => {
-        if (!userData || socket?.connected) return
-        const newSocket = io(backendUrl, {
-            query: {
-                userId: userData._id,
-            }
-        });
-        newSocket.connect()
+        
+        if (!userData || socket) return // skip if no user or socket instance already exists
+
+        // create socket with userId
+        const newSocket = io(backendUrl, { query: { userId: userData._id } })
+        
+        // save socket instance for later use
         setSocket(newSocket)
 
-        newSocket.on("getOnlineUser", (userIds)=> {
-            setOnlineUsers(userIds)
-        })
+        // listen for online users updates from server
+        newSocket.on("getOnlineUsers", (userIds) => setOnlineUsers(userIds))
     }
 
     useEffect(()=>{
