@@ -11,7 +11,6 @@ import {Server} from 'socket.io'
 // App config and HTTP server creation
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 3000;
 
 // Initialize socket.io server
 export const io = new Server(server, {
@@ -53,4 +52,10 @@ app.use('/api/auth', userRouter);
 app.use('/api/messages', messageRouter);
 
 // start the express server
-server.listen(PORT, () => console.log(`Server started on PORT: ${PORT}`));
+if (process.env.NODE_ENV !== "production") {
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => console.log(`Server started on PORT: ${PORT}`));
+}
+
+// export server for vercel
+export default server
