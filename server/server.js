@@ -12,9 +12,17 @@ import {Server} from 'socket.io'
 const app = express();
 const server = http.createServer(app);
 
+// Read allowed origins from .env
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : [];
+
 // Initialize socket.io server
 export const io = new Server(server, {
-    cors: {origin: "*"}
+    cors: {
+        origin: allowedOrigins,
+        methods: ["GET","POST","PUT"]
+    }
 })
 
 // Store online users
@@ -40,7 +48,13 @@ io.on("connection", (socket)=> {
 
 // middlewares
 app.use(express.json({limit: '4mb'}));
-app.use(cors());
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  credentials: true
+}));
+
 connectDB();
 connectCloudinary();
 
