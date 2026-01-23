@@ -17,8 +17,8 @@ const allowedOrigins = process.env.NODE_ENV !== "production"
     ? [process.env.ALLOWED_ORIGINS1]
     : [process.env.ALLOWED_ORIGINS2]
 
-// Initialize socket.io server
-export const io = new Server(server, {
+
+const corsOptions = {
     cors: {
         origin: (origin, callback) => {
             if(!origin) return callback(null, true);
@@ -28,6 +28,11 @@ export const io = new Server(server, {
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     }
+}
+
+// Initialize socket.io server
+export const io = new Server(server, {
+    cors: corsOptions
 })
 
 // Store online users
@@ -54,10 +59,7 @@ io.on("connection", (socket)=> {
 // middlewares
 app.use(express.json({limit: '4mb'}));
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 
 connectDB();
 connectCloudinary();
