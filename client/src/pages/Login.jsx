@@ -10,18 +10,25 @@ const Login = () => {
   const [password, setPassword] = useState("")
   const [bio, setBio] = useState("")
   const [isDataSubmitted, setIsDataSubmitted] = useState(false)
-
   const {login} = useContext(AuthContext)
+  const [loading, setLoading] = useState(false)
 
-  const onSubmitHandler = (event) => {
+  const onSubmitHandler = async (event) => {
     event.preventDefault()
 
-    if (currState === 'Sign up' && !isDataSubmitted) {
-      setIsDataSubmitted(true)
-      return
-    }
+    try {
+      if (currState === 'Sign up' && !isDataSubmitted) {
+        setIsDataSubmitted(true)
+        return
+      }
 
-    login(currState === "Sign up" ? 'signup' : 'login', {fullName, email, password, bio})
+      setLoading(true);
+      await login(currState === "Sign up" ? 'signup' : 'login', {fullName, email, password, bio})
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -68,15 +75,26 @@ const Login = () => {
           )
         }
   
-        <button type='submit' className='py-3 bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-md cursor-pointer'
+        <button 
+          type='submit' 
+          disabled={loading} 
+          className='py-3 bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-md cursor-pointer flex items-center justify-center ${loading ? "opacity-50 cursor-not-allowed" : ""}'
         >
-          {currState === "Sign up" ? "Create Account" : "Login Now"}
+          {loading
+            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            : currState === "Sign up" ? "Create Account" : "Login Now"
+          }
         </button>
       
-        <div className='flex items-center gap-2 text-sm text-gray-500'>
-          <input type="checkbox"/>
-          <p>Agree to the terms of use & privacy policy.</p>
-        </div>
+        {
+          currState === "Sign up" && (
+            <div className='flex items-center gap-2 text-sm text-gray-500'>
+              <input type="checkbox"/>
+              <p>Agree to the terms of use & privacy policy.</p>
+            </div>
+          )
+
+        }
       
         <div className='flex flex-col gap-2'>
           {currState === "Sign up" ? (

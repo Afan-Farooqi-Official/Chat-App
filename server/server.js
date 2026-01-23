@@ -13,15 +13,20 @@ const app = express();
 const server = http.createServer(app);
 
 // Read allowed origins from .env
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : [];
+const allowedOrigins = process.env.NODE_ENV !== "production"
+    ? [process.env.ALLOWED_ORIGINS1]
+    : [process.env.ALLOWED_ORIGINS2]
 
 // Initialize socket.io server
 export const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
-        methods: ["GET","POST","PUT"]
+        origin: (origin, callback) => {
+            if(!origin) return callback(null, true);
+            if(allowedOrigins.includes(origin)) return callback(null, true);
+            return callback(new Error("CORS blocked"));
+        },
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true
     }
 })
 
@@ -51,7 +56,6 @@ app.use(express.json({limit: '4mb'}));
 
 app.use(cors({
   origin: allowedOrigins,
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   credentials: true
 }));
 
