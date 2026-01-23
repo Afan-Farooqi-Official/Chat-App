@@ -77,6 +77,8 @@ export const sendMessage = async (req, res) => {
         const receiverId = req.params.id;
         const senderId = req.user._id;
 
+        if (!senderId) { return res.status(401).json({ success: false, message: "Unauthorized" }); }
+
         if (!text && !req.file) {
             return res.status(400).json({ success: false, message: "Message must have text or image" });
         }
@@ -84,11 +86,16 @@ export const sendMessage = async (req, res) => {
         let imageUrl;
 
         if (req.file) {
-            const uploadResponse = await cloudinary.uploader.upload(req.file.path)
-            imageUrl = uploadResponse.secure_url
+            try {
+                const uploadResponse = await cloudinary.uploader.upload(req.file.path)
+                imageUrl = uploadResponse.secure_url
+            } catch (error) {
+                console.error("Cloudinary upload failed:", error); 
+                return res.status(500).json({ success: false, message: "Image upload failed" });
+            }
         }
 
-        const newMessage = await MessageModel.create({
+        const newMessage = new MessageModel({
             sender: senderId,
             recipient: receiverId,
             text,
