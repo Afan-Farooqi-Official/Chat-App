@@ -32,14 +32,19 @@ const RightSidebar = () => {
 
       <hr className='border-gray-600 my-4'/>
 
-      <div className='px-5 text-xs'>
-        <p>Media</p>
-        <div className='mt-2 max-h-[200px] overflow-y-scroll grid grid-cols-2 gap-2 opacity-80'>
-          {msgImages.map((url, index)=> (
-            <div key={index} onClick={()=> window.open(url)} className='cursor-pointer rounded'>
-              <img src={url} alt="" className='h-full rounded-md' />
-            </div>
-          ))}
+      <div className='px-2 text-xs'>
+        <p className="font-semibold">Media</p>
+        <div className='mt-2 max-h-[200px] overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 grid grid-cols-2 gap-2 opacity-80'
+        >
+          {
+            msgImages && msgImages.length > 0 ? (
+                msgImages.map((url, index)=> (
+                <div key={index} onClick={()=> window.open(url)} className='cursor-pointer rounded overflow-hidden'>
+                  <img src={url} alt="" className='w-full h-full object-cover rounded-md' />
+                </div>
+              ))
+            ) : (<p className="col-span-2 text-gray-400 text-center">No media yet</p>)
+          }
         </div>
       </div>
 
